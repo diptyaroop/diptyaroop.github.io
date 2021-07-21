@@ -1,5 +1,7 @@
 @import url("fontawesome-all.min.css");
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,300italic,400,600");
+@import url("https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css");
+
 
 /*
 	Prologue by HTML5 UP
@@ -2259,15 +2261,22 @@ input, select, textarea {
 			}
 
 			#main > section.three {
-				background-color: #f5fafa;
+				/* background-color: #f5fafa; */
+				background-color: #dce3e2;
 			}
 
 			#main > section.four {
-				background-color: #ecf1f1;
+				/* background-color: #ecf1f1; */
+				background-color: #ffffff;
 			}
 
 			#main > section.five {
-				background-color: #e2e7e6;
+				/* background-color: #e2e7e6; */
+				background-color: #dce3e2;
+			}
+			#main > section.six {
+				/* background-color: #dee2e1; */
+				background-color: #ffffff;
 			}
 
 /* Wide */
