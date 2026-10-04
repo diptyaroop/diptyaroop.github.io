@@ -8,7 +8,7 @@ Commit and push this site, including `.github/workflows/scholar-metrics.yml`, to
 
 The workflow commits only `assets/data/scholar.json`. On the public site, `assets/js/scholar.js` reads that file directly from this repository's raw GitHub endpoint, avoiding the limitation that commits made with `GITHUB_TOKEN` do not trigger a Pages rebuild. Local previews read the local copy. The page checks on load, when a tab becomes visible, and every 30 minutes while visible.
 
-This is periodic polling, not an instant notification from Google. GitHub may delay scheduled runs, and Google may block automated requests. A failed fetch or unexpected page leaves the last verified snapshot untouched and fails the workflow visibly; it never inserts zeroes. After two days without a successful check, the page labels the numbers as last-known values and directs visitors to Scholar. Without JavaScript, the initial dated snapshot is still visible.
+This is periodic polling, not an instant notification from Google. GitHub may delay scheduled runs, and Google may block automated requests. Temporary network failures and HTTP 429/500/502/503/504 responses receive up to three attempts with 15- and 30-second backoff. A longer `Retry-After` is honored up to 60 seconds; longer cooldowns are left to the next scheduled run. HTTP 403 and unexpected pages are not retried or bypassed. Failed runs now include the underlying error in a GitHub annotation, visible without opening detailed logs. A failed fetch or unexpected page leaves the last verified snapshot untouched and fails the workflow visibly; it never inserts zeroes. After two days without a successful check, the page labels the numbers as last-known values and directs visitors to Scholar. Without JavaScript, the initial dated snapshot is still visible.
 
 If GitHub disables a schedule after extended repository inactivity, re-enable it in the Actions tab. Branch protection may require allowing bot commits or adapting the workflow to your repository policy. No repository settings are changed by this code.
 
@@ -21,3 +21,5 @@ python3 scripts/update_scholar.py
 ```
 
 GitHub references: [Scheduled workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule), [Pages publishing and bot commits](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
+
+Changes to the updater, its Python tests, or the workflow also trigger a refresh to validate the change on GitHub. Metrics-only commits do not trigger another refresh.

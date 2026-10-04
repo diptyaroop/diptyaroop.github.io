@@ -2,6 +2,12 @@ name: Refresh Google Scholar metrics
 on:
   schedule:
     - cron: '23 */6 * * *'
+  push:
+    branches: [master]
+    paths:
+      - 'scripts/update_scholar.py'
+      - 'tests/test_scholar.py'
+      - '.github/workflows/scholar-metrics.yml'
   workflow_dispatch:
 permissions:
   contents: write
@@ -13,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: master
       - name: Test metrics parsing and failure behavior
