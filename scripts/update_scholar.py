@@ -94,9 +94,35 @@ def fetch_html(request):
             time.sleep(delay)
 
 
+def recent_snapshot(output):
+    try:
+        data = json.loads(output.read_text(encoding='utf-8'))
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(data['checked_at'])).total_seconds()
+        return (data['scholar_id'] == SCHOLAR_ID and data['source'] == SOURCE
+                and type(data['citations']) is int and type(data['h_index']) is int
+                and data['h_index'] >= 0 and data['citations'] >= data['h_index'] ** 2
+                and 0 <= age <= 48 * 60 * 60)
+    except (OSError, ValueError, TypeError, KeyError):
+        return False
+
+
+def handle_failure(error, output):
+    # Access denials are intermittent on hosted runners. Keep them visible as
+    # warnings only while we have a valid, recent snapshot; never re-date it.
+    if isinstance(error, HTTPError) and error.code in (403, 429) and recent_snapshot(output):
+        message = f'Scholar returned HTTP {error.code}. Retaining verified metrics less than 48 hours old; next scheduled run will try again.'
+        if os.environ.get('GITHUB_ACTIONS') == 'true':
+            print(f'::warning title=Scholar refresh deferred::{message}')
+        else:
+            print(message, file=sys.stderr)
+        return 0
+    report_failure(error)
+    return 1
+
+
 def report_failure(error):
     message = f'Scholar refresh failed; existing data preserved: {error}'
-    print(message, file=sys.stderr)
+    print(message.replace('\r', ' ').replace('\n', ' '), file=sys.stderr)
     if os.environ.get('GITHUB_ACTIONS') == 'true':
         # Escape workflow-command characters before emitting the public annotation.
         escaped = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
@@ -123,5 +149,4 @@ if __name__ == '__main__':
     try:
         refresh(args.output)
     except Exception as error:
-        report_failure(error)
-        sys.exit(1)
+        sys.exit(handle_failure(error, args.output))

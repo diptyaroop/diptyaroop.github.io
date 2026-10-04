@@ -90,6 +90,23 @@ class ScholarTests(unittest.TestCase):
         self.assertIn('bad%25value%0A::notice::injected', stdout.getvalue())
         self.assertEqual(len(stdout.getvalue().splitlines()), 1)
 
+    def test_access_denial_only_deferred_with_recent_verified_data(self):
+        from datetime import datetime, timezone, timedelta
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'scholar.json'
+            error = HTTPError(scholar.SOURCE, 403, 'Forbidden', {}, None)
+            for age, valid, expected in [(1, True, 0), (49, True, 1), (-1, True, 1), (1, False, 1)]:
+                data = {'scholar_id': scholar.SCHOLAR_ID, 'source': scholar.SOURCE,
+                        'citations': 350 if valid else 1, 'h_index': 8,
+                        'checked_at': (datetime.now(timezone.utc) - timedelta(hours=age)).isoformat()}
+                original = json.dumps(data)
+                output.write_text(original)
+                with patch('sys.stderr', new_callable=io.StringIO), patch('sys.stdout', new_callable=io.StringIO):
+                    self.assertEqual(scholar.handle_failure(error, output), expected)
+                self.assertEqual(output.read_text(), original)
+            output.write_text('{}')
+            self.assertFalse(scholar.recent_snapshot(output))
+
 
 if __name__ == '__main__':
     unittest.main()
